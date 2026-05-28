@@ -24,10 +24,49 @@ class NewMenuItem extends BaseHandler
 	*/
 	private function validateFields()
 	{
-		if ( $_POST['menuType'] == 'custom' && $_POST['navigationLabel'] == "" ) return wp_send_json(array('status' => 'error', 'message' => __('Custom Links must have a label.', 'wp-nested-pages')));
-		if ( $_POST['menuType'] == 'custom' && $_POST['url'] == "" ) return wp_send_json(array('status' => 'error', 'message' => __('Please provide a valid URL.', 'wp-nested-pages')));
-	}
+	    // Extensible validation for custom link label
+	    $require_label = apply_filters(
+	        'nested_pages_require_custom_link_label',
+	        true, // default: required
+	        $_POST
+	    );
+	    if (
+	        $require_label &&
+	        $_POST['menuType'] == 'custom' &&
+	        $_POST['navigationLabel'] == ""
+	    ) {
+	        return wp_send_json([
+	            'status' => 'error',
+	            'message' => __('Custom Links must have a label.', 'wp-nested-pages')
+	        ]);
+	    }
+	
+	    // Extensible validation for custom link URL
+	    $require_url = apply_filters(
+	        'nested_pages_require_custom_link_url',
+	        true, // default: required
+	        $_POST
+	    );
+	    if (
+	        $require_url &&
+	        $_POST['menuType'] == 'custom' &&
+	        $_POST['url'] == ""
+	    ) {
+	        return wp_send_json([
+	            'status' => 'error',
+	            'message' => __('Please provide a valid URL.', 'wp-nested-pages')
+	        ]);
+	    }
 
+		/**
+		* Allow injection of custom validation logic for Nested Pages menu item saving.
+		* To send an error, use wp_send_json(['status' => 'error', 'message' => 'Your error message']);
+		*
+		* @param array $_POST All submitted form data
+		*/
+		do_action('nested_pages_custom_link_validate', $_POST);
+	}
+	
 	/**
 	* Save the item as a redirect post type
 	*/
